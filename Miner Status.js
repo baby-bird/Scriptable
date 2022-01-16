@@ -1,6 +1,8 @@
-///////////////////// YOUR ETH ADDRESS ///////////////////
+// Design and structure of this code is inspired by following url
+// https://www.reddit.com/r/ethermine/comments/o034m7/scriptable_ios_widget_to_keep_tracking_your_pool/
+//--------------- YOUR ETH ADDRESS ---------------
 const address = 'YOUR ADDRESS'
-////////////////////////////////////////////////////////////////////
+//---------------------------------------------
 
 /// CONFIG
 const mineINFO = await getMinerInfo(address,'KRW-ETH');

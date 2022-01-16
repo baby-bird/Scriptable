@@ -1,4 +1,5 @@
-
+// Design of this Widget is inspired by following url
+// https://www.reddit.com/r/ethermine/comments/o034m7/scriptable_ios_widget_to_keep_tracking_your_pool/
 //---------------Set up Your Terra Address----------------------------
 let terra_address = 'YOUR TERRA ADDRESS';
 //--------------------------------------------------------------------
