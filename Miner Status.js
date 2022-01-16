@@ -1,79 +1,82 @@
+///////////////////// YOUR ETH ADDRESS ///////////////////
+const address = 'YOUR ADDRESS'
+////////////////////////////////////////////////////////////////////
 
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+/// CONFIG
+const mineINFO = await getMinerInfo(address,'KRW-ETH');
+const unpaid = mineINFO.Current_Earning
+const activeWorkers = mineINFO.Active_Worker;
+const Monthly_Earning = mineINFO.Monthly_Earning;
+const reportHash = mineINFO.reported_Hash;
+const i = new Request('https://icons.iconarchive.com/icons/cjdowner/cryptocurrency-flat/1024/Ethereum-ETH-icon.png')
+const img = await i.loadImage()
 
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+// SCRIPT
+let widget = createWidget(unpaid, activeWorkers, img, Monthly_Earning, reportHash)
 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-//-------------- Set up your ETH Address ------------------------
-let eth_address = 'YOUR ETH Address';
-//---------------------------------------------------------------
-let CryptoPair = 'KRW-ETH';
-
-const params = args.widgetParameter ? args.widgetParameter.split(",") : [];
-
-const isDarkTheme = params?.[0] === 'dark';
-const padding = 2;
-
-const widget = new ListWidget();
-if (isDarkTheme) {
- widget.backgroundColor = new Color('#1C1C1E');; 
+if (config.runsInWidget) {
+  widget.url = `https://ethermine.org/miners/${address}/dashboard`;
+  Script.setWidget(widget)
+  Script.complete()
+  
 }
-widget.setPadding(padding, padding, padding, padding);
-
-widget.url = `https://ethermine.org/miners/${eth_address}/dashboard`;
-
-const headerStack = widget.addStack();
-headerStack.setPadding(0, 7, 10, 0);
-headerStack.layoutHorizontally();
-
-const headerImgStack = headerStack.addStack();
-headerImgStack.setPadding(0,0,0,10);
-const ethereumImage = await loadImage('https://rubic.exchange/assets/images/widget/ethereum.png');
-const headerImage = headerImgStack.addImage(ethereumImage);
-headerImage.imageSize = new Size(20, 20);
-headerImage.centerAlignImage();
-
-const headerTxtStack = headerStack.addStack();
-headerTxtStack.setPadding(0,0,0,8);
-const headerTxt = headerTxtStack.addText('Miner Stat');
-headerTxt.font = Font.boldSystemFont(18);
-
-async function buildWidget(eth_adress, CryptoPair) {
-    const mineINFO = await getMinerInfo(eth_adress,CryptoPair);
-  	const Earning = mineINFO.Current_Earning
-    addInfo('Earned', `₩ ${Earning.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
-    addInfo('c Hash', `${mineINFO.current_Hash}MH/s`);
-    addInfo('r Hash', `${mineINFO.reported_Hash}MH/s`);
-	const rowStack = widget.addStack();	
-   	rowStack.setPadding(10, 7, 0, 0);
-   	rowStack.layoutHorizontally();
-  	const time = new Date();
-	const timeStack = rowStack.addStack(); 
-	const timeText = timeStack.addText('마지막 업데이트 : '+time.toLocaleTimeString('ko-KR'));
-   	timeText.font = Font.mediumSystemFont(9);
+else {
+  widget.presentSmall()
 }
 
-function addInfo(symbol, price) {
-   const rowStack = widget.addStack();
-   rowStack.setPadding(0, 7, 10, 0);
-   rowStack.layoutHorizontally();
+
+// Widget layout 
+function createWidget(unpaid, activeWorkers, img, Monthly_Earning, reportHash) {
+  let w = new ListWidget()
+  w.backgroundColor = new Color("#1A1A1A")
+
+  let image = w.addImage(img)
+  image.imageSize = new Size(30, 30)
+  image.centerAlignImage()
+
+  w.addSpacer(8)
+
+  let staticText = w.addText("Unpaid Balance")
+  staticText.textColor = Color.white()
+  staticText.font = Font.boldSystemFont(10)
+  staticText.centerAlignText()
+
+  w.addSpacer(3)
+
+  let unpaidTxt = w.addText(`₩ ${unpaid.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`)
+  unpaidTxt.textColor = Color.orange()
+  unpaidTxt.font = Font.systemFont(16)
+  unpaidTxt.centerAlignText()
   
-   const symbolStack = rowStack.addStack(); 
-   const priceStack = rowStack.addStack(); 
-  
-   symbolStack.setPadding(0, 0, 0, 10);
-    
-   const symbolText = symbolStack.addText(symbol);
-   symbolText.font = Font.mediumSystemFont(16);
-  
-   const priceText = priceStack.addText(price);
-   priceText.font = Font.mediumSystemFont(14);
-  
-  if (isDarkTheme) {
-    symbolText.textColor = new Color('#FFFFFF');
-  }
-  
+  w.addSpacer(3)
+
+  let monthlyStaticTxt = w.addText("Monthly Earning")
+  monthlyStaticTxt.textColor = Color.white()
+  monthlyStaticTxt.font = Font.boldSystemFont(10)
+  monthlyStaticTxt.centerAlignText()
+
+  w.addSpacer(3)
+
+  let monthlyTxt = w.addText(`₩ ${Monthly_Earning.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`)
+  monthlyTxt.textColor = Color.orange()
+  monthlyTxt.font = Font.systemFont(16)
+  monthlyTxt.centerAlignText()
+
+  let coinsPerMinTxt = w.addText((activeWorkers || 0) + " active / " + reportHash + " MH/s")
+  coinsPerMinTxt.textColor = Color.gray()
+  coinsPerMinTxt.font = Font.systemFont(10)
+  coinsPerMinTxt.centerAlignText()
+	
+  w.addSpacer(3)  
+  const time = new Date();
+  let uptimeTxt = w.addText('마지막 업데이트 : '+time.toLocaleTimeString('ko-KR'));
+  uptimeTxt.textColor = Color.gray()
+  uptimeTxt.font = Font.systemFont(10)
+  uptimeTxt.centerAlignText()
+
+  w.addSpacer(8)
+  w.setPadding(0, 0, 0, 0)
+  return w
 }
 
 async function getMinerInfo(address, CryptoPair) {
@@ -97,17 +100,3 @@ async function getCryptoPrice(CryptoPair) {
   const apiResult = await req.loadJSON() 
   return { price: apiResult[0].trade_price};
 }
-
-
-async function loadImage(imgUrl) {
-    const req = new Request(imgUrl)
-    return await req.loadImage()
-}
-
-await buildWidget(eth_address, CryptoPair);
-
-Script.setWidget(widget);
-widget.presentSmall();
-widget.refreshAfterDate = new Date(Date.now() + 1000 * 120) // Refresh every 120 Second
-Script.complete();
-
