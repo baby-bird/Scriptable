@@ -1,5 +1,13 @@
-// Design of this Widget is inspired by following url
-// https://www.reddit.com/r/ethermine/comments/o034m7/scriptable_ios_widget_to_keep_tracking_your_pool/
+// Variables used by Scriptable.
+// These must be at the very top of the file. Do not edit.
+// icon-color: green; icon-glyph: dollar-sign;
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 //---------------Set up Your Terra Address----------------------------
 let terra_address = 'YOUR TERRA ADDRESS';
 //--------------------------------------------------------------------
@@ -19,16 +27,23 @@ let headerImage = widget.addImage(ANCImage);
 headerImage.imageSize = new Size(30, 30);
 headerImage.centerAlignImage();
 
-widget.addSpacer(8)
+widget.addSpacer(6)
 
 
 async function buildWidget(terra_address) {
-    const ancINFO = await getAnchorInfo(terra_address);
-  	var time = parseISOString(ancINFO.time);
-    addInfo('Total Deposit', `$ ${Number(ancINFO.price).toFixed(1)}`);
-    addInfo('APY', `${ancINFO.apy} %`); 	const rowStack = widget.addStack();	
+    const ancINFO = await getAnchorInfo(terra_address);  
+    addInfo('Total Deposit', `${Number(ancINFO.price).toFixed(1)} UST`);
+    addInfo('APY', `${ancINFO.apy.toFixed(2)} %`); 	const rowStack = widget.addStack();
+    
+    const USTprice = await getUSTPrice();
+    const USTText = widget.addText(`UST : $ ${Number(USTprice.inUSDT).toFixed(4)}`);
+   	USTText.font = Font.systemFont(10);
+  	USTText.centerAlignText();
+  	USTText.textColor = Color.gray();	
+
+	
 	widget.addSpacer(2);
-	const timeText = widget.addText('마지막 업데이트 : '+time.toLocaleTimeString('ko-KR'));
+	const timeText = widget.addText('Last Update : '+ ancINFO.time);
    	timeText.font = Font.systemFont(10);
   	timeText.centerAlignText();
   	timeText.textColor = Color.gray();
@@ -41,7 +56,7 @@ function addInfo(symbol, price) {
   	symbolText.centerAlignText()
   	symbolText.textColor = Color.white()
   
-  	widget.addSpacer(3)
+//   	widget.addSpacer(3)
   
    	const priceText = widget.addText(price);
    	priceText.font = Font.systemFont(16);
@@ -52,21 +67,42 @@ function addInfo(symbol, price) {
   
 }
 
-async function getAnchorInfo(address) {
-  const url = `https://ancinfo.herokuapp.com/anc_info/${address}`;
-  const req = new Request(url)
-  const apiResult = await req.loadJSON() 
-  return { price: apiResult.Current_Balance, apy: apiResult.APY, time: apiResult.Timestamp};
+async function getAnchorInfo(address) {  
+  let req = new Request("https://mantle.terra.dev/?cw20--balance=terra1hzh9vpxhsk8253se0vv5jj6etdvxu3nv8z07zu");
+  req.method = "post";
+  req.headers = {
+  	"Content-Type": "application/json"
+  };
+  req.body = JSON.stringify({"query":"{\n  tokenBalance: WasmContractsContractAddressStore(\n    ContractAddress: \"terra1hzh9vpxhsk8253se0vv5jj6etdvxu3nv8z07zu\"\n    QueryMsg: \"{\\\"balance\\\":{\\\"address\\\":\\\""+ address + "\\\"}}\"\n  ) {\n    Result\n    Height\n  }\n}\n","variables":{}
+  });
+  let res = await req.loadJSON();
+  let result = res.data;
+  var aUST_bal_JSON = JSON.parse(result.tokenBalance.Result);
+  let aUST_bal = aUST_bal_JSON.balance/Math.pow(10,6)
+  
+  let req2 = new Request("https://api.anchorprotocol.com/api/v1/market/ust");
+  let res2 = await req2.loadJSON();
+  //let result = JSON.parse(res);
+  var conv_rate = res2.exchange_rate
+  var apy = res2.deposit_apy*100
+  const time = new Date();
+  let uptimeTxt = time.toLocaleTimeString('ko-KR');
+  return { price: aUST_bal*conv_rate, apy: apy, time: uptimeTxt};
 }
 
 async function loadImage(imgUrl) {
     const req = new Request(imgUrl)
     return await req.loadImage()
 }
-function parseISOString(s) {
-  var b = s.split(/\D+/);
-  return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5], b[6]));
+
+async function getUSTPrice() {
+  const url = 'https://api.binance.com/api/v3/ticker/price?symbol=USTUSDT';
+  const req = new Request(url)
+  const apiResult = await req.loadJSON() 
+  return { inUSDT : apiResult.price};
 }
+
+
 await buildWidget(terra_address);
 
 Script.setWidget(widget);
